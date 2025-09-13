@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
+import { Loader2, TriangleAlert } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { loginSchema, type LoginFormData } from "@/lib/validations"
 
@@ -92,6 +92,28 @@ export function LoginForm() {
             </Button>
           </div>
         </form>
+        <Alert>
+          <AlertDescription className="flex flex-col gap-4 items-center justify-center">
+            <div className="flex w-full items-center justify-center gap-2">
+              <TriangleAlert className="w-5 h-5 text-yellow-500" />
+              <strong>Usuários de teste:</strong>
+            </div>
+            <div className="flex mt-1 text-xs grid grid-cols-2 gap-20">
+              <div>
+                <p><b>Matrícula:</b> 12345</p>
+                <p><b>Nome:</b> João Silva</p>
+                <p><b>Função:</b> funcionário</p>
+                <p><b>Senha:</b> 123456</p>
+              </div>
+              <div>
+                <p><b>Matrícula:</b> 67890</p>
+                <p><b>Nome:</b> Maria Santos</p>
+                <p><b>Função:</b> gestor</p>
+                <p><b>Senha:</b> 123456</p>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
       </CardContent>
     </Card>
   )
