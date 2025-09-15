@@ -46,7 +46,7 @@ Sistema corporativo moderno para gestão de férias de funcionários, desenvolvi
 
 ## 📁 Estrutura do Projeto
 
-\`\`\`
+```plaintext
 src/
 ├── app/                    # App Router do Next.js
 │   ├── dashboard/         # Dashboard do funcionário
@@ -68,14 +68,14 @@ src/
 │   └── utils.ts           # Utilitários gerais
 └── types/                 # Definições de tipos
     └── index.ts           # Tipos principais
-\`\`\`
+```
 
 ## 🔌 Integração com Backend (Spring Boot)
 
 ### Endpoints Necessários
 
 #### Autenticação
-\`\`\`typescript
+```typescript
 // POST /api/auth/login
 interface LoginRequest {
   matricula: string
@@ -98,10 +98,10 @@ interface RegisterRequest {
   funcao: "funcionario" | "gestor"
   senha: string
 }
-\`\`\`
+```
 
 #### Gestão de Férias
-\`\`\`typescript
+```typescript
 // GET /api/vacation/stats/{matricula}
 interface VacationStatsResponse {
   totalDias: number
@@ -141,7 +141,7 @@ interface ApprovalRequest {
   aprovadoPor: string
   observacoes?: string
 }
-\`\`\`
+```
 
 ### Arquivos para Modificar
 
@@ -151,7 +151,7 @@ interface ApprovalRequest {
 
 ### Exemplo de Integração
 
-\`\`\`typescript
+```typescript
 // lib/api.ts
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
 
@@ -174,11 +174,11 @@ export const api = {
   
   // ... outros endpoints
 }
-\`\`\`
+```
 
 ## 👥 Usuários de Teste
 
-\`\`\`typescript
+```typescript
 // Funcionários
 { matricula: "12345", nome: "João Silva", funcao: "funcionario", senha: "123456" }
 { matricula: "11111", nome: "Pedro Costa", funcao: "funcionario", senha: "123456" }
@@ -186,7 +186,7 @@ export const api = {
 
 // Gestor
 { matricula: "67890", nome: "Maria Santos", funcao: "gestor", senha: "123456" }
-\`\`\`
+```
 
 ## 🎨 Design System
 
@@ -224,6 +224,3 @@ O projeto utiliza um design system corporativo com:
 ---
 
 **Desenvolvido com ❤️ usando Next.js 15 e tecnologias modernas**
-\`\`\`
-
-```json file="" isHidden
