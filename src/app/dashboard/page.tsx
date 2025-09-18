@@ -9,7 +9,7 @@ import { VacationStatsCard } from "@/components/dashboard/vacation-stats-card"
 import { VacationRequestForm } from "@/components/dashboard/vacation-request-form"
 import { VacationRequestsList } from "@/components/dashboard/vacation-requests-list"
 import { useAuth } from "@/contexts/auth-context"
-import { getVacationStats, mockVacationRequests } from "@/lib/vacation"
+import { fetchVacationRequestsFromAPI, calculateStatsFromRequests } from "@/lib/vacation"
 import type { VacationRequest, VacationStats } from "@/types"
 
 function DashboardContent() {
@@ -27,17 +27,13 @@ function DashboardContent() {
         return
       }
 
-      // Load vacation stats for employees
-      const userStats = getVacationStats(user.matricula)
-      setStats(userStats)
-
-      // Load user's vacation requests
-      const userRequests = mockVacationRequests.filter((req) => req.funcionarioMatricula === user.matricula)
-      setRequests(
-        userRequests.sort((a, b) => new Date(b.dataSolicitacao).getTime() - new Date(a.dataSolicitacao).getTime()),
-      )
+      // Buscar solicitações reais da API
+      fetchVacationRequestsFromAPI(user.matricula).then((apiRequests) => {
+        setRequests(apiRequests.sort((a, b) => new Date(b.dataSolicitacao).getTime() - new Date(a.dataSolicitacao).getTime()));
+        setStats(calculateStatsFromRequests(apiRequests));
+      });
     }
-  }, [user, refreshKey, router])
+  }, [user, refreshKey, router]);
 
   const handleRequestSuccess = () => {
     setRefreshKey((prev) => prev + 1)

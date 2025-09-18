@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -15,15 +15,17 @@ interface AllRequestsHistoryProps {
 export function AllRequestsHistory({ requests }: AllRequestsHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 5
 
   const getStatusColor = (status: VacationRequest["status"]) => {
     switch (status) {
       case "aprovado":
-        return "default"
+        return "secondary"
       case "rejeitado":
         return "destructive"
       case "pendente":
-        return "secondary"
+        return "default"
       default:
         return "secondary"
     }
@@ -55,6 +57,14 @@ export function AllRequestsHistory({ requests }: AllRequestsHistoryProps) {
       return matchesSearch && matchesStatus
     })
     .sort((a, b) => new Date(b.dataSolicitacao).getTime() - new Date(a.dataSolicitacao).getTime())
+
+  const totalPages = Math.ceil(filteredRequests.length / PAGE_SIZE)
+  const paginatedRequests = filteredRequests.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Reset page to 1 if filters/search change
+  React.useEffect(() => {
+    setPage(1)
+  }, [searchTerm, statusFilter, requests])
 
   return (
     <Card>
@@ -113,8 +123,9 @@ export function AllRequestsHistory({ requests }: AllRequestsHistoryProps) {
               </p>
             </div>
           ) : (
+            <>
             <div className="space-y-4">
-              {filteredRequests.map((request) => (
+              {paginatedRequests.map((request) => (
                 <div key={request.id} className="border border-border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
@@ -159,8 +170,31 @@ export function AllRequestsHistory({ requests }: AllRequestsHistoryProps) {
                 </div>
               ))}
             </div>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <button
+                  className="px-3 py-1 rounded bg-muted text-foreground disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Anterior
+                </button>
+                <span className="text-sm">
+                  Página {page} de {totalPages}
+                </span>
+                <button
+                  className="px-3 py-1 rounded bg-muted text-foreground disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Próxima
+                </button>
+              </div>
+            )}
+            </>
           )}
-        </div>
+  </div>
       </CardContent>
     </Card>
   )

@@ -1,3 +1,125 @@
+// Busca todas as solicitações da API (para gestor)
+export async function fetchAllVacationRequestsFromAPI(): Promise<VacationRequest[]> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const token = localStorage.getItem("vacation-token");
+  if (!token) return [];
+  try {
+    const res = await fetch(`${API_URL}/solicitacoes`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data as any[]).map((item) => ({
+      id: item.uuid,
+      funcionarioMatricula: item.solicitante?.matricula || "",
+      funcionarioNome: item.solicitante?.nome || "",
+      dataInicio: item.data_inicio,
+      dataFim: item.data_fim,
+      status: item.status,
+      dataSolicitacao: item.data_solicitacao,
+      observacoes: item.observacao_solicitante || undefined,
+      aprovadoPor: item.avaliador?.nome || undefined,
+      dataAprovacao: item.data_avaliacao || undefined,
+      justificativaAvaliador: item.justificativa_avaliador || undefined,
+    }));
+  } catch (e) {
+    console.error("Erro ao buscar todas as solicitações da API:", e);
+    return [];
+  }
+}
+// Busca solicitações reais da API para o funcionário
+export async function fetchVacationRequestsFromAPI(matricula: string): Promise<VacationRequest[]> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL
+  const token = localStorage.getItem("vacation-token");
+  if (!token) return [];
+  try {
+    const res = await fetch(`${API_URL}/solicitacoes/funcionario/${matricula}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    // Mapear para VacationRequest[]
+    return (data as any[]).map((item) => ({
+      id: item.uuid,
+      funcionarioMatricula: item.solicitante?.matricula || "",
+      funcionarioNome: item.solicitante?.nome || "",
+      dataInicio: item.data_inicio,
+      dataFim: item.data_fim,
+      status: item.status,
+      dataSolicitacao: item.data_solicitacao,
+      observacoes: item.observacao_solicitante || undefined,
+      justificativaAvaliador: item.justificativa_avaliador || undefined,
+      aprovadoPor: item.avaliador?.nome || undefined,
+      dataAprovacao: item.data_avaliacao || undefined,
+    }));
+  } catch (e) {
+    console.error("Erro ao buscar solicitações da API:", e);
+    return [];
+  }
+}
+
+// Envia solicitação de férias para a API real
+export async function submitVacationRequestToAPI({ funcionarioMatricula, dataInicio, dataFim, observacoes }: {
+  funcionarioMatricula: string;
+  dataInicio: string;
+  dataFim: string;
+  observacoes?: string;
+}): Promise<boolean> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const token = localStorage.getItem("vacation-token");
+  if (!token) throw new Error("Token de autenticação não encontrado.");
+  try {
+    const res = await fetch(`${API_URL}/solicitacoes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        solicitante: { matricula: funcionarioMatricula },
+        data_inicio: dataInicio,
+        data_fim: dataFim,
+        observacao_solicitante: observacoes || undefined,
+      }),
+    });
+    if (res.status === 201) return true;
+    const err = await res.text();
+    throw new Error(err || "Erro ao solicitar férias");
+  } catch (e: any) {
+    throw new Error(e?.message || "Erro ao solicitar férias");
+  }
+}
+
+// Calcula stats a partir das solicitações reais
+export function calculateStatsFromRequests(requests: VacationRequest[]): VacationStats {
+  const totalDias = 30;
+  // Considera "usou férias" se existe uma solicitação aprovada nos últimos 365 dias
+  const hoje = new Date();
+  let diasUsados = 0;
+  let diasRestantes = 30;
+  let podesolicitarFerias = true;
+  let proximasFerias: string | undefined = undefined;
+  const aprovadas = requests.filter((r) => r.status === "aprovado");
+  if (aprovadas.length > 0) {
+    // Pega a mais recente
+    const ultima = aprovadas.sort((a, b) => new Date(b.dataFim).getTime() - new Date(a.dataFim).getTime())[0];
+    const fim = new Date(ultima.dataFim);
+    const diff = (hoje.getTime() - fim.getTime()) / (1000 * 60 * 60 * 24);
+    if (diff < 365) {
+      diasUsados = 30;
+      diasRestantes = 0;
+      podesolicitarFerias = false;
+      const proxima = new Date(fim);
+      proxima.setDate(proxima.getDate() + 365);
+      proximasFerias = proxima.toLocaleDateString("pt-BR");
+    }
+  }
+  return { totalDias, diasUsados, diasRestantes, podesolicitarFerias, proximasFerias };
+}
 import type { VacationRequest, VacationStats } from "@/types"
 
 // Mock vacation requests data - replace with API calls later
@@ -244,35 +366,58 @@ export const submitVacationRequest = async (
   return true
 }
 
-export const approveVacationRequest = async (requestId: string, approverName: string): Promise<boolean> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
 
-  const request = mockVacationRequests.find((req) => req.id === requestId)
-  if (request && request.status === "pendente") {
-    request.status = "aprovado"
-    request.aprovadoPor = approverName
-    request.dataAprovacao = formatISODate(getBrazilianDate())
-    return true
+// Aprova solicitação de férias via PATCH na API
+export const approveVacationRequest = async (requestId: string, approverMatricula: string, justificativa?: string): Promise<boolean> => {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const token = localStorage.getItem("vacation-token");
+  if (!token) return false;
+  try {
+    const res = await fetch(`${API_URL}/solicitacoes/${requestId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        avaliador: { matricula: approverMatricula },
+        justificativa_avaliador: justificativa || "",
+        status: "aprovado"
+      })
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
-  return false
 }
 
+
+// Rejeita solicitação de férias via PATCH na API
 export const rejectVacationRequest = async (
   requestId: string,
-  approverName: string,
-  observacoes?: string,
+  approverMatricula: string,
+  justificativa?: string,
 ): Promise<boolean> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  const request = mockVacationRequests.find((req) => req.id === requestId)
-  if (request && request.status === "pendente") {
-    request.status = "rejeitado"
-    request.aprovadoPor = approverName
-    request.dataAprovacao = formatISODate(getBrazilianDate())
-    if (observacoes) request.observacoes = observacoes
-    return true
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const token = localStorage.getItem("vacation-token");
+  if (!token) return false;
+  try {
+    const res = await fetch(`${API_URL}/solicitacoes/${requestId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        avaliador: { matricula: approverMatricula },
+        justificativa_avaliador: justificativa || "",
+        status: "rejeitado"
+      })
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
-  return false
 }
 
 export const hasConflictingVacations = (startDate: string, endDate: string, excludeRequestId?: string): boolean => {

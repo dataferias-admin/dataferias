@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (authenticatedUser) {
         setUser(authenticatedUser)
         localStorage.setItem("vacation-user", JSON.stringify(authenticatedUser))
+        // O token já é salvo em localStorage por authenticateUser
         return true
       }
       return false
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem("vacation-user")
+    localStorage.removeItem("vacation-token")
   }
 
   return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>

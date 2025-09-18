@@ -19,7 +19,7 @@ import {
   isValidVacationDate,
   calculateVacationEnd,
   canRequestVacation,
-  submitVacationRequest,
+  submitVacationRequestToAPI,
   getBrazilianDate,
 } from "@/lib/vacation"
 
@@ -77,15 +77,13 @@ export function VacationRequestForm({ onSuccess }: VacationRequestFormProps) {
         return
       }
 
-      const requestData = {
+
+      await submitVacationRequestToAPI({
         funcionarioMatricula: user.matricula,
-        funcionarioNome: user.nome,
         dataInicio: data.dataInicio,
         dataFim: calculateVacationEnd(data.dataInicio),
         observacoes: data.observacoes,
-      }
-
-      await submitVacationRequest(requestData)
+      })
 
       setSuccess(true)
       reset()

@@ -1,20 +1,44 @@
 "use client"
 
+import React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Clock, CheckCircle, XCircle } from "lucide-react"
-import type { VacationRequest } from "@/types"
 
-interface ManagerStatsProps {
-  requests: VacationRequest[]
-}
+export function ManagerStats() {
+  const [totalEmployees, setTotalEmployees] = React.useState<number | null>(null)
+  const [pending, setPending] = React.useState<number | null>(null)
+  const [approved, setApproved] = React.useState<number | null>(null)
+  const [rejected, setRejected] = React.useState<number | null>(null)
+  const [loading, setLoading] = React.useState(true)
 
-export function ManagerStats({ requests }: ManagerStatsProps) {
-  const totalRequests = requests.length
-  const pendingRequests = requests.filter((req) => req.status === "pendente").length
-  const approvedRequests = requests.filter((req) => req.status === "aprovado").length
-  const rejectedRequests = requests.filter((req) => req.status === "rejeitado").length
-
-  const uniqueEmployees = new Set(requests.map((req) => req.funcionarioMatricula)).size
+  React.useEffect(() => {
+    async function fetchStats() {
+      setLoading(true)
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL
+        const token = localStorage.getItem("vacation-token")
+        const headers = { Authorization: `Bearer ${token}` }
+        const [emp, pend, apr, rej] = await Promise.all([
+          fetch(`${API_URL}/info/funcionarios/count`, { headers }).then(r => r.json()),
+          fetch(`${API_URL}/info/solicitacoes/pendentes`, { headers }).then(r => r.json()),
+          fetch(`${API_URL}/info/solicitacoes/aprovadas`, { headers }).then(r => r.json()),
+          fetch(`${API_URL}/info/solicitacoes/rejeitadas`, { headers }).then(r => r.json()),
+        ])
+        setTotalEmployees(typeof emp === 'number' ? emp : emp?.count ?? 0)
+        setPending(typeof pend === 'number' ? pend : pend?.count ?? 0)
+        setApproved(typeof apr === 'number' ? apr : apr?.count ?? 0)
+        setRejected(typeof rej === 'number' ? rej : rej?.count ?? 0)
+      } catch {
+        setTotalEmployees(0)
+        setPending(0)
+        setApproved(0)
+        setRejected(0)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchStats()
+  }, [])
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -24,8 +48,8 @@ export function ManagerStats({ requests }: ManagerStatsProps) {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-primary">{uniqueEmployees}</div>
-          <p className="text-xs text-muted-foreground">Com solicitações de férias</p>
+          <div className="text-2xl font-bold text-blue-500">{loading ? "..." : totalEmployees}</div>
+          <p className="text-xs text-muted-foreground">Total cadastrado na base</p>
         </CardContent>
       </Card>
 
@@ -35,8 +59,8 @@ export function ManagerStats({ requests }: ManagerStatsProps) {
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-accent">{pendingRequests}</div>
-          <p className="text-xs text-muted-foreground">Aguardando aprovação</p>
+          <div className="text-2xl text-yellow-500 font-bold text-accent">{loading ? "..." : pending}</div>
+          <p className="text-xs text-muted-foreground">Aguardando avaliação</p>
         </CardContent>
       </Card>
 
@@ -46,7 +70,7 @@ export function ManagerStats({ requests }: ManagerStatsProps) {
           <CheckCircle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-primary">{approvedRequests}</div>
+          <div className="text-2xl font-bold text-green-500">{loading ? "..." : approved}</div>
           <p className="text-xs text-muted-foreground">Férias aprovadas</p>
         </CardContent>
       </Card>
@@ -57,7 +81,7 @@ export function ManagerStats({ requests }: ManagerStatsProps) {
           <XCircle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-destructive">{rejectedRequests}</div>
+          <div className="text-2xl font-bold text-destructive">{loading ? "..." : rejected}</div>
           <p className="text-xs text-muted-foreground">Solicitações rejeitadas</p>
         </CardContent>
       </Card>

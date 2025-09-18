@@ -1,10 +1,10 @@
-export type UserRole = "funcionario" | "gestor"
+export type UserRole = "operacional" | "gestor"
 
 export interface User {
   matricula: string
   nome: string
   funcao: UserRole
-  senha: string
+  senha?: string
 }
 
 export interface VacationRequest {
@@ -16,6 +16,7 @@ export interface VacationRequest {
   status: "pendente" | "aprovado" | "rejeitado"
   dataSolicitacao: string
   observacoes?: string
+  justificativaAvaliador?: string
   aprovadoPor?: string
   dataAprovacao?: string
 }

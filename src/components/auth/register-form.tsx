@@ -92,13 +92,13 @@ export function RegisterForm() {
 
           <div className="space-y-2">
             <Label htmlFor="funcao">Função</Label>
-            <Select onValueChange={(value) => setValue("funcao", value as "funcionario" | "gestor")}>
+            <Select onValueChange={(value) => setValue("funcao", value as "operacional" | "gestor")}>
               <SelectTrigger className="cursor-pointer">
                 <SelectValue placeholder="Selecione sua função" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="funcionario" className="cursor-pointer">
-                  Funcionário
+                <SelectItem value="operacional" className="cursor-pointer">
+                  Operacional
                 </SelectItem>
                 <SelectItem value="gestor" className="cursor-pointer">
                   Gestor

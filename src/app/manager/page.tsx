@@ -8,7 +8,7 @@ import { ManagerStats } from "@/components/manager/manager-stats"
 import { PendingApprovals } from "@/components/manager/pending-approvals"
 import { AllRequestsHistory } from "@/components/manager/all-requests-history"
 import { VacationRequestForm } from "@/components/dashboard/vacation-request-form"
-import { mockVacationRequests } from "@/lib/vacation"
+import { fetchAllVacationRequestsFromAPI } from "@/lib/vacation"
 import type { VacationRequest } from "@/types"
 
 function ManagerDashboardContent() {
@@ -16,12 +16,10 @@ function ManagerDashboardContent() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    // Load all vacation requests
-    setRequests(
-      [...mockVacationRequests].sort(
-        (a, b) => new Date(b.dataSolicitacao).getTime() - new Date(a.dataSolicitacao).getTime(),
-      ),
-    )
+    // Load all vacation requests from API
+    fetchAllVacationRequestsFromAPI().then((apiRequests) => {
+      setRequests(apiRequests.sort((a, b) => new Date(b.dataSolicitacao).getTime() - new Date(a.dataSolicitacao).getTime()));
+    });
   }, [refreshKey])
 
   const handleUpdate = () => {
@@ -42,10 +40,10 @@ function ManagerDashboardContent() {
           <p className="text-muted-foreground">Gerencie as solicitações de férias da equipe</p>
         </div>
 
-        <ManagerStats requests={requests} />
+        <ManagerStats  />
 
         <div className="grid gap-8 lg:grid-cols-2">
-          <PendingApprovals requests={requests} onUpdate={handleUpdate} />
+          <PendingApprovals />
           <VacationRequestForm onSuccess={handleRequestSuccess} />
         </div>
 

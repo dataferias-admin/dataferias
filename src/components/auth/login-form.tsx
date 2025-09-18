@@ -92,7 +92,7 @@ export function LoginForm() {
             </Button>
           </div>
         </form>
-        <Alert>
+        {/* <Alert>
           <AlertDescription className="flex flex-col gap-4 items-center justify-center">
             <div className="flex w-full items-center justify-center gap-2">
               <TriangleAlert className="w-5 h-5 text-yellow-500" />
@@ -113,7 +113,7 @@ export function LoginForm() {
               </div>
             </div>
           </AlertDescription>
-        </Alert>
+        </Alert> */}
       </CardContent>
     </Card>
   )

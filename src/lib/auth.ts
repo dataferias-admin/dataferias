@@ -1,52 +1,55 @@
 import type { User } from "@/types"
 
-// Mock users data - replace with API calls later
-export const mockUsers: User[] = [
-  {
-    matricula: "12345",
-    nome: "João Silva",
-    funcao: "funcionario",
-    senha: "123456",
-  },
-  {
-    matricula: "67890",
-    nome: "Maria Santos",
-    funcao: "gestor",
-    senha: "123456",
-  },
-  {
-    matricula: "11111",
-    nome: "Pedro Costa",
-    funcao: "funcionario",
-    senha: "123456",
-  },
-  {
-    matricula: "22222",
-    nome: "Ana Oliveira",
-    funcao: "funcionario",
-    senha: "123456",
-  },
-]
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
+// Faz login na API e retorna o usuário autenticado se sucesso, além de salvar o token no localStorage
 export const authenticateUser = async (matricula: string, senha: string): Promise<User | null> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ matricula, senha }),
+    });
 
-  const user = mockUsers.find((u) => u.matricula === matricula && u.senha === senha)
-  return user || null
-}
+    if (!response.ok) return null;
 
-export const registerUser = async (userData: Omit<User, "matricula"> & { matricula: string }): Promise<boolean> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+    const data = await response.json();
+    const user = data.funcionario;
+    const token = data.token;
+    if (!token) return null;
 
-  // Check if user already exists
-  const existingUser = mockUsers.find((u) => u.matricula === userData.matricula)
-  if (existingUser) {
-    return false
+    // Salva o token no localStorage
+    localStorage.setItem("vacation-token", token);
+
+    // Decodifica o token para obter dados do usuário (ou faz uma chamada para /me futuramente)
+    // Por enquanto, retorna apenas a matrícula e função do payload, se disponível
+    // Aqui, para simplificação, retorna apenas a matrícula usada no login
+    // Ideal: criar endpoint /me para buscar dados completos do usuário
+    return user as User;
+  } catch (error) {
+    console.error("Erro ao autenticar:", error);
+    return null;
   }
+};
 
-  // Add new user to mock data
-  mockUsers.push(userData)
-  return true
-}
+// Faz cadastro na API e retorna true se sucesso
+export const registerUser = async (userData: Omit<User, "matricula"> & { matricula: string }): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_URL}/funcionarios`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+    if (response.status === 201) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Erro ao cadastrar:", error);
+    return false;
+  }
+};

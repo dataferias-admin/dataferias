@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,19 +12,55 @@ import { useAuth } from "@/contexts/auth-context"
 import { approveVacationRequest, rejectVacationRequest } from "@/lib/vacation"
 import type { VacationRequest } from "@/types"
 
-interface PendingApprovalsProps {
-  requests: VacationRequest[]
-  onUpdate: () => void
-}
-
-export function PendingApprovals({ requests, onUpdate }: PendingApprovalsProps) {
+export function PendingApprovals() {
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState("")
   const [error, setError] = useState("")
+  const [pendingRequests, setPendingRequests] = useState<VacationRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [successMsg, setSuccessMsg] = useState("")
+  const PAGE_SIZE = 5
+  const totalPages = Math.ceil(pendingRequests.length / PAGE_SIZE)
+  const paginatedRequests = pendingRequests.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const { user } = useAuth()
 
-  const pendingRequests = requests.filter((req) => req.status === "pendente")
+  // Busca pendentes da API
+  const fetchPendentes = React.useCallback(async () => {
+    setLoading(true)
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL
+      const token = localStorage.getItem("vacation-token")
+      const res = await fetch(`${API_URL}/solicitacoes/pendentes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error("Erro ao buscar solicitações pendentes")
+      const data = await res.json()
+      setPendingRequests((data as any[]).map((item) => ({
+        id: item.uuid,
+        funcionarioMatricula: item.solicitante?.matricula || "",
+        funcionarioNome: item.solicitante?.nome || "",
+        dataInicio: item.data_inicio,
+        dataFim: item.data_fim,
+        status: item.status,
+        dataSolicitacao: item.data_solicitacao,
+        observacoes: item.observacao_solicitante || undefined,
+        aprovadoPor: item.avaliador?.nome || undefined,
+        dataAprovacao: item.data_avaliacao || undefined,
+        justificativaAvaliador: item.justificativa_avaliador || undefined,
+      })))
+    } catch (e) {
+      // Não limpa a lista durante loading para evitar flick
+    } finally {
+      setLoading(false)
+      setPage(1)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchPendentes()
+  }, [fetchPendentes])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("pt-BR")
@@ -35,16 +71,21 @@ export function PendingApprovals({ requests, onUpdate }: PendingApprovalsProps) 
 
     setProcessingId(requestId)
     setError("")
+    setSuccessMsg("")
 
     try {
-      const success = await approveVacationRequest(requestId, user.nome)
+      const success = await approveVacationRequest(requestId, user.matricula)
       if (success) {
-        onUpdate()
+        await fetchPendentes()
+        setSuccessMsg("Solicitação aprovada com sucesso!")
+        setTimeout(() => setSuccessMsg(""), 3000)
       } else {
         setError("Erro ao aprovar solicitação")
+        setTimeout(() => setError("") , 3000)
       }
     } catch (error) {
       setError("Erro ao aprovar solicitação")
+      setTimeout(() => setError("") , 3000)
     } finally {
       setProcessingId(null)
     }
@@ -55,23 +96,29 @@ export function PendingApprovals({ requests, onUpdate }: PendingApprovalsProps) 
 
     setProcessingId(requestId)
     setError("")
+    setSuccessMsg("")
 
     try {
-      const success = await rejectVacationRequest(requestId, user.nome, rejectReason)
+      const success = await rejectVacationRequest(requestId, user.matricula, rejectReason)
       if (success) {
         setRejectingId(null)
         setRejectReason("")
-        onUpdate()
+        await fetchPendentes()
+        setSuccessMsg("Solicitação rejeitada com sucesso!")
+        setTimeout(() => setSuccessMsg(""), 1000)
       } else {
         setError("Erro ao rejeitar solicitação")
+        setTimeout(() => setError("") , 1000)
       }
     } catch (error) {
       setError("Erro ao rejeitar solicitação")
+      setTimeout(() => setError("") , 1000)
     } finally {
       setProcessingId(null)
     }
   }
 
+  // Não mostra loading global, só spinner nos botões
   if (pendingRequests.length === 0) {
     return (
       <Card>
@@ -112,8 +159,14 @@ export function PendingApprovals({ requests, onUpdate }: PendingApprovalsProps) 
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          {successMsg && (
+            <Alert variant="default">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription>{successMsg}</AlertDescription>
+            </Alert>
+          )}
 
-          {pendingRequests.map((request) => (
+          {paginatedRequests.map((request) => (
             <div key={request.id} className="border border-border rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -229,6 +282,28 @@ export function PendingApprovals({ requests, onUpdate }: PendingApprovalsProps) 
             </div>
           ))}
         </div>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              className="px-3 py-1 rounded bg-muted text-foreground disabled:opacity-50"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Anterior
+            </button>
+            <span className="text-sm">
+              Página {page} de {totalPages}
+            </span>
+            <button
+              className="px-3 py-1 rounded bg-muted text-foreground disabled:opacity-50"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Próxima
+            </button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

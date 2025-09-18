@@ -8,7 +8,7 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   matricula: z.string().min(1, "Matrícula é obrigatória"),
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  funcao: z.enum(["funcionario", "gestor"], {
+  funcao: z.enum(["operacional", "gestor"], {
     errorMap: () => ({ message: "Função deve ser funcionário ou gestor" }),
   }),
   senha: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),

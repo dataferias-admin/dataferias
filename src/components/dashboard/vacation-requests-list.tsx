@@ -13,7 +13,7 @@ export function VacationRequestsList({ requests }: VacationRequestsListProps) {
   const getStatusColor = (status: VacationRequest["status"]) => {
     switch (status) {
       case "aprovado":
-        return "default"
+        return "outline"
       case "rejeitado":
         return "destructive"
       case "pendente":
@@ -102,6 +102,12 @@ export function VacationRequestsList({ requests }: VacationRequestsListProps) {
                 {request.observacoes && (
                   <div className="mt-2 p-2 bg-muted rounded text-sm">
                     <strong>Observações:</strong> {request.observacoes}
+                  </div>
+                )}
+
+                {request.justificativaAvaliador && (
+                  <div className="mt-2 p-2 bg-muted rounded text-sm">
+                    <strong>Justificativa:</strong> {request.justificativaAvaliador}
                   </div>
                 )}
               </div>
