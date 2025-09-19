@@ -86,7 +86,7 @@ export async function submitVacationRequestToAPI({ funcionarioMatricula, dataIni
         observacao_solicitante: observacoes || undefined,
       }),
     });
-    if (res.status === 201) return true;
+    if (res.status === 200) return true;
     const err = await res.text();
     throw new Error(err || "Erro ao solicitar férias");
   } catch (e: any) {
