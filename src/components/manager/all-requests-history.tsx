@@ -170,7 +170,7 @@ export function AllRequestsHistory({ requests }: AllRequestsHistoryProps) {
 
                   {request.justificativaAvaliador && (
                     <div className="p-3 bg-muted rounded text-sm">
-                      <strong>Observações:</strong>
+                      <strong>Justificativa do avaliador:</strong>
                       <p className="mt-1">{request.justificativaAvaliador}</p>
                     </div>
                   )}
