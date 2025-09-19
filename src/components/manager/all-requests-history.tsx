@@ -167,6 +167,13 @@ export function AllRequestsHistory({ requests }: AllRequestsHistoryProps) {
                       <p className="mt-1">{request.observacoes}</p>
                     </div>
                   )}
+
+                  {request.observacoes && (
+                    <div className="p-3 bg-muted rounded text-sm">
+                      <strong>Observações:</strong>
+                      <p className="mt-1">{request.justificativaAvaliador}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
